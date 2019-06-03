@@ -26,9 +26,8 @@ type IAPClient interface {
 
 // Client implements IAPClient
 type Client struct {
-	ProductionURL string
-	SandboxURL    string
-	httpCli       *http.Client
+	Url     string
+	httpCli *http.Client
 }
 
 // HandleError returns error message by status code
@@ -75,24 +74,19 @@ func HandleError(status int) error {
 }
 
 // New creates a client object
-func New() *Client {
+func New(isProd bool) *Client {
 	client := &Client{
-		ProductionURL: ProductionURL,
-		SandboxURL:    SandboxURL,
+		Url: SandboxURL,
 		httpCli: &http.Client{
 			Timeout: 10 * time.Second,
 		},
 	}
-	return client
-}
 
-// NewWithClient creates a client with a custom http client.
-func NewWithClient(client *http.Client) *Client {
-	return &Client{
-		ProductionURL: ProductionURL,
-		SandboxURL:    SandboxURL,
-		httpCli:       client,
+	if isProd {
+		client.Url = ProductionURL
 	}
+
+	return client
 }
 
 // Verify sends receipts and gets validation result
@@ -102,7 +96,7 @@ func (c *Client) Verify(ctx context.Context, reqBody IAPRequest, result interfac
 		return err
 	}
 
-	req, err := http.NewRequest("POST", c.ProductionURL, b)
+	req, err := http.NewRequest("POST", c.Url, b)
 	if err != nil {
 		return err
 	}
@@ -140,7 +134,7 @@ func (c *Client) parseResponse(resp *http.Response, result interface{}, ctx cont
 			return err
 		}
 
-		req, err := http.NewRequest("POST", c.SandboxURL, b)
+		req, err := http.NewRequest("POST", SandboxURL, b)
 		if err != nil {
 			return err
 		}
